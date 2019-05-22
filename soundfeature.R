@@ -4,7 +4,7 @@ library(seewave)
 library(tuneR)
 
 ## 指定したディレクトリから全てのwavファイルのパスを取得
-path = "/Users/matsumoto/GoogleDrive/the drum club - kit 004 THE MEGA BUNDLE"
+path = ""
 files_path <- path %>% list.files(pattern = "wav$", recursive=T, include.dirs=FALSE)
 files_path <- str_c(path, files_path, sep = "/")
 files_path %>% length()
@@ -14,7 +14,7 @@ files_path %>% length()
 i <- 1
 dat <- NULL
 
-for(i in 1:2131){
+for(i in 1:length(files_path)){
   tmp <-
     files_path[i] %>% readWave(header = TRUE)
   
@@ -41,7 +41,7 @@ for(i in 1:2131){
 
 
 ## 波形をプロットしてみる
-dID <- 1722
+dID <- 1
 files_path[dID] %>% readWave()
 
 tbl <- as_tibble(dat[[dID]]@left, 1:length(dat[[dID]]@left))
@@ -65,13 +65,14 @@ freq_spec <- lapply(dat,
 freq_spec_df <- 
   cbind(
     1:length(freq_spec),
-    freq_spec %>% list.map(mean) %>% unlist() %>% as_data_frame(),
-    freq_spec %>% list.map(median) %>% unlist() %>% as_data_frame(),
+    freq_spec %>% list.map(mean) %>% unlist() %>% as_tibble(),
+    freq_spec %>% list.map(median) %>% unlist() %>% as_tibble(),
     files_path[1:length(freq_spec)]
   )
 
 colnames(freq_spec_df) <- c("dID", "mean", "median", "filepath")
 
+## あまり意味のないプロット
 freq_spec_df %>% ggplot(mapping = aes(x = mean, y = median)) + geom_point()
 
 freq_spec_df %>% arrange(mean)

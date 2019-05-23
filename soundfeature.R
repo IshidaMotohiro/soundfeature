@@ -3,27 +3,22 @@ library(rlist)
 library(seewave)
 library(tuneR)
 
-## w’è‚µ‚½ƒfƒBƒŒƒNƒgƒŠ‚©‚ç‘S‚Ä‚Ìwavƒtƒ@ƒCƒ‹‚ÌƒpƒX‚ğæ“¾
-path = ""
-files_path <- path %>% list.files(pattern = "wav$", recursive=T, include.dirs=FALSE)
-files_path <- str_c(path, files_path, sep = "/")
+## æŒ‡å®šã—ãŸãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã‹ã‚‰å…¨ã¦ã®wavãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ‘ã‚¹ã‚’å–å¾—
+path <- "wave"
+# files_path <- path %>% list.files(pattern = "wav$", recursive = TRUE, include.dirs = FALSE)
+files_path <-path %>% list.files(pattern = "wav$", recursive = TRUE, full.names = TRUE)
+# files_path <- str_c(path, files_path, sep = "/")
 files_path %>% length()
 
-## wavƒtƒ@ƒCƒ‹‚ğ“Ç‚İ‚Ş
-## wavƒtƒ@ƒCƒ‹‚Ì‘ƒTƒ“ƒvƒ‹”‚ª1ˆÈ‰º‚Ì‚à‚Ì‚Í“Ç‚İ‚Ü‚È‚¢
-i <- 1
-dat <- NULL
+## wavãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã¿è¾¼ã‚€
+## wavãƒ•ã‚¡ã‚¤ãƒ«ã®ç·ã‚µãƒ³ãƒ—ãƒ«æ•°ãŒ1ä»¥ä¸‹ã®ã‚‚ã®ã¯èª­ã¿è¾¼ã¾ãªã„
+# i <- 1
+dat <- list(length(files_path))
 
-for(i in 1:length(files_path)){
-  tmp <-
-    files_path[i] %>% readWave(header = TRUE)
-  
-  if (tmp$samples > 1){
-    tmp2 <- files_path[i] %>% readWave(header = FALSE)
-    dat <- c(dat, list(tmp2))
-  }
+for(i in seq_along(files_path)){
+  tmp <-files_path[i] %>% readWave(header = FALSE)
+  if(NROW(tmp@left) > 1)   dat[[i]] <- tmp
 }
-
 
 # naIndex <- NULL
 # dat <- lapply(files_path[1750:1760],
@@ -40,18 +35,18 @@ for(i in 1:length(files_path)){
 # dat %>% list.exclude(is.na() == TRUE)
 
 
-## ”gŒ`‚ğƒvƒƒbƒg‚µ‚Ä‚İ‚é
+## æ³¢å½¢ã‚’ãƒ—ãƒ­ãƒƒãƒˆã—ã¦ã¿ã‚‹
 dID <- 1
-files_path[dID] %>% readWave()
+# files_path[dID] %>% readWave()
 
-tbl <- as_tibble(dat[[dID]]@left, 1:length(dat[[dID]]@left))
-tbl <- tbl %>% mutate(time = (1:length(dat[[dID]]@left) / dat[[dID]]@samp.rate))
+tbl <- tibble(value = dat[[dID]]@left, rate = dat[[dID]]@samp.rate)#, name = c("value", "sample_rate"))
+tbl <- tbl %>% mutate(time = seq_along(value) / rate)
 tbl %>% ggplot(mapping = aes(x = time ,y = tbl$value)) + geom_line()
 
-## ƒXƒyƒNƒgƒƒOƒ‰ƒ€‚ğƒvƒƒbƒg‚µ‚Ä‚İ‚é
+## ã‚¹ãƒšã‚¯ãƒˆãƒ­ã‚°ãƒ©ãƒ ã‚’ãƒ—ãƒ­ãƒƒãƒˆã—ã¦ã¿ã‚‹
 spec_win <- dat[[dID]]@left %>% spectro(f = dat[[dID]]@samp.rate)
 
-## seewave::specprop‚Åü”g”ƒXƒyƒNƒgƒ‹‚ğZo
+## seewave::specpropã§å‘¨æ³¢æ•°ã‚¹ãƒšã‚¯ãƒˆãƒ«ã‚’ç®—å‡º
 freq_spec_test <- specprop(seewave::spec(dat[[dID]], f = dat[[dID]]@samp.rate, str = TRUE, plot = FALSE))
 freq_spec_test
 # dat1 <- dat %>% head(10)
@@ -60,8 +55,8 @@ freq_spec <- lapply(dat,
                function(x){try(specprop(spec(x), f = x@samp.rate))}
                )
 
-## ü”g”ƒXƒyƒNƒgƒ‹‚ÌƒŠƒXƒg‚©‚çmean‚Æmedian‚ğ’Šo‚µ‚Äƒf[ƒ^ƒtƒŒ[ƒ€‚É•ÏŠ·
-## y4—ñ–Ú‚Ìfilepath‚Íwaveƒtƒ@ƒCƒ‹‚ğ“Ç‚İ‚ŞÛ‚Ì”j‘¹ƒf[ƒ^œ‹ˆ—‚ÌŠÖŒW‚ÅƒYƒŒ‚Ä‚¢‚é‚Ì‚Å—vC³z
+## å‘¨æ³¢æ•°ã‚¹ãƒšã‚¯ãƒˆãƒ«ã®ãƒªã‚¹ãƒˆã‹ã‚‰meanã¨medianã‚’æŠ½å‡ºã—ã¦ãƒ‡ãƒ¼ã‚¿ãƒ•ãƒ¬ãƒ¼ãƒ ã«å¤‰æ›
+## ã€4åˆ—ç›®ã®filepathã¯waveãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã¿è¾¼ã‚€éš›ã®ç ´æãƒ‡ãƒ¼ã‚¿é™¤å»å‡¦ç†ã®é–¢ä¿‚ã§ã‚ºãƒ¬ã¦ã„ã‚‹ã®ã§è¦ä¿®æ­£ã€‘
 freq_spec_df <- 
   cbind(
     1:length(freq_spec),
@@ -72,7 +67,7 @@ freq_spec_df <-
 
 colnames(freq_spec_df) <- c("dID", "mean", "median", "filepath")
 
-## ‚ ‚Ü‚èˆÓ–¡‚Ì‚È‚¢ƒvƒƒbƒg
+## ã‚ã¾ã‚Šæ„å‘³ã®ãªã„ãƒ—ãƒ­ãƒƒãƒˆ
 freq_spec_df %>% ggplot(mapping = aes(x = mean, y = median)) + geom_point()
 
 freq_spec_df %>% arrange(mean)
